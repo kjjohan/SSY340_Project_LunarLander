@@ -18,11 +18,11 @@ class PolicyGradientNetwork(nn.Module):
         self.layer_output = nn.Linear(self.layer2_dims, self.n_actions)
         self.optimizer = optim.Adam(self.parameters(), lr=learn_rate)
 
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cuda:1')
-        self.to(self.device)
+        #self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        #self.to(self.device)
 
     def forward(self, x):
-        state = T.Tensor(x).to(self.device)
+        state = T.Tensor(x)#.to(self.device)
         x = self.layer1(state)
         x = F.relu(x)
         x = self.layer2(x)
@@ -38,7 +38,7 @@ class PolicyGradientAgent(object):
         self.policy = PolicyGradientNetwork(learn_rate, input_dims, layer1_dims, layer2_dims, n_actions)
 
     def choose_action(self, x):
-        probabilities = F.softmax(self.policy.forward(x))
+        probabilities = F.softmax(self.policy.forward(x), dim=0)
         action_probs = T.distributions.Categorical(probabilities)
         action = action_probs.sample()
         log_probs = action_probs.log_prob(action)
@@ -62,9 +62,9 @@ class PolicyGradientAgent(object):
         std = np.std(G) if np.std(G) > 0 else 1
         G = (G - mean) / std
 
-        G = T.tensor(G, dtype=T.float).to(self.policy.device)
+        G = T.tensor(G, dtype=T.float)#.to(self.policy.device)
 
-        loss  = 0
+        loss = 0
         for g, logprob in zip(G, self.action_memory):
             loss += -g * logprob
 
