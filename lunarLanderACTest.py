@@ -1,11 +1,11 @@
 import numpy as np
 import gym
-from modelVanilla import PolicyGradientAgent
+from modelACTest import PolicyGradientAgent
 import matplotlib.pyplot as plt 
 from gym import wrappers
 import time
 
-def plotLearning(scores, filename, x=None, window=5):   
+def plotLearning(scores, filename, x=None, window=25):   
     N = len(scores)
     running_avg = np.empty(N)
     for t in range(N):
@@ -15,24 +15,24 @@ def plotLearning(scores, filename, x=None, window=5):
     plt.rc('font', family='serif')
     plt.ylabel('Score')       
     plt.xlabel('Game')            
-    plt.title('REINFORCE')         
+    plt.title('A2C')         
     plt.plot(x, scores, alpha=0.7)
     plt.plot(x, running_avg, linewidth=3.0)
-    plt.ylim((-500,300))
+    plt.ylim((-300,250))
     plt.legend(['Score', 'Smoothed score over 25 episodes'], loc='lower right')
     
     plt.savefig(filename+'.eps', format='eps', dpi=1000)
     plt.savefig(filename+'.png')
 
+
 if __name__ == '__main__':
-    agent = PolicyGradientAgent(learn_rate=0.002, input_dims=[8], layer1_dims=64, layer2_dims=32, n_actions=4, discount_rate=0.99, betas=(0.9,0.999))
-    #agent.load_checkpoint()
+    agent = PolicyGradientAgent(actor_lr=0.002, critic_lr=0.002, input_dims=[8], actor_dims=[64,32], critic_dims=[64,32], n_actions=4, discount_rate=0.99)
 
     env = gym.make('LunarLander-v2')
     score_history = []
     score = 0
-    num_episodes = 3001
-    env = wrappers.Monitor(env, "gifsVanilla", video_callable=lambda count: count % 500 == 0, force=True)
+    num_episodes = 2001
+    env = wrappers.Monitor(env, "gifsQAC", video_callable=lambda count: count % 500 == 0, force=True)
 
     start_time = time.time()
     for i in range(num_episodes):
@@ -40,19 +40,26 @@ if __name__ == '__main__':
         done = False
         score = 0
         observation = env.reset() 
+
         while not done:
-            probabilities = agent.policy.forward(observation)
+            probabilities = agent.actor_network.forward(observation)
+            value = agent.critic_network.forward(observation)
+
             action = agent.choose_action(probabilities)
             observation_, reward, done, info = env.step(action)
+
+            agent.store_values(value)
             agent.store_rewards(reward)
+
             observation = observation_
             score += reward
+
         score_history.append(score)
         agent.learn()
-        #agent.save_checkpoint()
+
     elapsed_time = time.time() - start_time
     print("Elapsed time: ", elapsed_time)
-    filename = 'images/REINFORCE-alpha002'
+    filename = 'images/AC-alpha002-v3'
     plotLearning(score_history, filename=filename, window=25)
 
 

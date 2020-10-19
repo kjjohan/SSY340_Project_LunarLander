@@ -14,8 +14,8 @@ class PolicyGradientNetwork(nn.Module):
 
         # Creating the network layers
         self.layer1 = nn.Linear(*self.input_dims, self.layer1_dims)
-        #self.layer2 = nn.Linear(self.layer1_dims, self.layer2_dims)
-        self.layer_output = nn.Linear(self.layer1_dims, self.n_actions)
+        self.layer2 = nn.Linear(self.layer1_dims, self.layer2_dims)
+        self.layer_output = nn.Linear(self.layer2_dims, self.n_actions)
 
         # Optimizer
         self.optimizer = optim.Adam(self.parameters(), lr=learn_rate, betas=betas)
@@ -24,8 +24,8 @@ class PolicyGradientNetwork(nn.Module):
         state = T.Tensor(x)
         x = self.layer1(state)
         x = F.relu(x)
-        #x = self.layer2(x)
-        #x = F.relu(x)
+        x = self.layer2(x)
+        x = F.relu(x)
         x = self.layer_output(x)
         x = F.softmax(x, dim=0)
         return x

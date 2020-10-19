@@ -91,9 +91,9 @@ class PolicyGradientAgent(object):
         AC_loss = 0
         
         for q, logprob, value in zip(Q_values, self.action_memory, self.value_memory):
-            advantage = q - value
+            advantage = q - value.detach()
             actor_loss += -advantage * logprob
-            critic_loss += F.smooth_l1_loss(value, q)
+            critic_loss += F.smooth_l1_loss(value.detach(), q)
             AC_loss += actor_loss + critic_loss
 
         AC_loss.backward()
