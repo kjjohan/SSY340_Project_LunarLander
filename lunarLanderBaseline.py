@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from gym import wrappers
 import time
 
-def plotLearning(scores, filename, x=None, window=5):   
+def plotLearning(scores, filename, x=None, window=25):   
     N = len(scores)
     running_avg = np.empty(N)
     for t in range(N):
@@ -21,38 +21,36 @@ def plotLearning(scores, filename, x=None, window=5):
     plt.ylim((-500,300))
     plt.legend(['Score', 'Smoothed score over 25 episodes'], loc='lower right')
     
-    plt.savefig(filename+('.eps'), format='eps', dpi=1000)
+    plt.savefig(filename+'.eps', format='eps', dpi=1000)
     plt.savefig(filename+'.png')
 
 if __name__ == '__main__':
-    agent = PolicyGradientAgent(learn_rate=0.002, input_dims=[8], layer1_dims=64, layer2_dims=32, n_actions=4, discount_rate=0.99, betas=(0.9,0.999))
-    #agent.load_checkpoint()
-
+    agent = PolicyGradientAgent(learn_rate=0.002, input_dims=[8], layer1_dims=64, layer2_dims=32, n_actions=4, discount_rate=0.99)
     env = gym.make('LunarLander-v2')
     score_history = []
     score = 0
     num_episodes = 3001
-    env = wrappers.Monitor(env, "gifsBaseline", video_callable=lambda count: count % 500 == 0, force=True)
+    env = wrappers.Monitor(env, "gifsNormalized002", video_callable=lambda count: count % 500 == 0, force=True)
 
     start_time = time.time()
     for i in range(num_episodes):
         print('episode: ', i, 'score: ', score)
         done = False
         score = 0
-        observation = env.reset() 
+        state = env.reset() 
         while not done:
-            probabilities = agent.policy.forward(observation)
+            probabilities = agent.policy.forward(state)
             action = agent.choose_action(probabilities)
-            observation_, reward, done, info = env.step(action)
+            state_, reward, done, info = env.step(action)
             agent.store_rewards(reward)
-            observation = observation_
+            state = state_
             score += reward
         score_history.append(score)
         agent.learn()
-        #agent.save_checkpoint()
+
     elapsed_time = time.time() - start_time
     print("Elapsed time: ", elapsed_time)
-    filename = 'images/BASELINE-alpha002'
+    filename = 'images/Normalized-alpha002-64x32-e3001'
     plotLearning(score_history, filename=filename, window=25)
 
 

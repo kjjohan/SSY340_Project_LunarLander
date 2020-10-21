@@ -2,9 +2,10 @@ import gym
 
 env = gym.make('LunarLander-v2')
 env.reset()
-
-for _ in range(1000):
+terminate = False
+#for _ in range(1000):
+while not terminate:
     env.render()
-    env.step(env.action_space.sample())
+    _, _, terminate, _ = env.step(env.action_space.sample())
     
 env.close()

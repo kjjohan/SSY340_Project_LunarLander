@@ -18,7 +18,7 @@ def plotLearning(scores, filename, x=None, window=25):
     plt.title('A2C')         
     plt.plot(x, scores, alpha=0.7)
     plt.plot(x, running_avg, linewidth=3.0)
-    plt.ylim((-300,250))
+    plt.ylim((-500,300))
     plt.legend(['Score', 'Smoothed score over 25 episodes'], loc='lower right')
     
     plt.savefig(filename+'.eps', format='eps', dpi=1000)
@@ -31,27 +31,27 @@ if __name__ == '__main__':
     env = gym.make('LunarLander-v2')
     score_history = []
     score = 0
-    num_episodes = 2001
-    env = wrappers.Monitor(env, "gifsQAC", video_callable=lambda count: count % 500 == 0, force=True)
+    num_episodes = 3001
+    env = wrappers.Monitor(env, "gifsA2C002", video_callable=lambda count: count % 500 == 0, force=True)
 
     start_time = time.time()
     for i in range(num_episodes):
         print('episode: ', i, 'score: ', score)
         done = False
         score = 0
-        observation = env.reset() 
+        state = env.reset() 
 
         while not done:
-            probabilities = agent.actor_network.forward(observation)
-            value = agent.critic_network.forward(observation)
+            probabilities = agent.actor_network.forward(state)
+            value = agent.critic_network.forward(state)
 
             action = agent.choose_action(probabilities)
-            observation_, reward, done, info = env.step(action)
+            state_, reward, done, info = env.step(action)
 
             agent.store_values(value)
             agent.store_rewards(reward)
 
-            observation = observation_
+            state = state_
             score += reward
 
         score_history.append(score)
@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     elapsed_time = time.time() - start_time
     print("Elapsed time: ", elapsed_time)
-    filename = 'images/AC-alpha002-v3'
+    filename = 'images/A2C-alpha002'
     plotLearning(score_history, filename=filename, window=25)
 
 

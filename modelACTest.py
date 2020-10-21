@@ -20,8 +20,8 @@ class ActorNetwork(nn.Module):
         # Optimizer
         self.optimizer = optim.Adam(self.parameters(), lr=learn_rate)
 
-    def forward(self, observation):
-        state = T.Tensor(observation)
+    def forward(self, state):
+        state = T.Tensor(state)
         
         probs = self.actor_layer1(state)
         probs = F.relu(probs)
@@ -48,8 +48,8 @@ class CriticNetwork(nn.Module):
         # Optimizer
         self.optimizer = optim.Adam(self.parameters(), lr=learn_rate)
 
-    def forward(self, observation):
-        state = T.Tensor(observation)
+    def forward(self, state):
+        state = T.Tensor(state)
         
         value = self.critic_layer1(state)
         value = F.relu(value)
@@ -69,8 +69,8 @@ class PolicyGradientAgent(object):
         self.actor_network = ActorNetwork(actor_lr, input_dims, actor_dims[0], actor_dims[1], n_actions)
         self.critic_network = CriticNetwork(critic_lr, input_dims, critic_dims[0], critic_dims[1], n_actions)
 
-    def choose_action(self, probabilities):
-        action_probs = T.distributions.Categorical(probabilities)
+    def choose_action(self, probs):
+        action_probs = T.distributions.Categorical(probs)
         action = action_probs.sample()
         log_probs = action_probs.log_prob(action)
         self.action_memory.append(log_probs)
@@ -84,30 +84,30 @@ class PolicyGradientAgent(object):
 
     def learn(self):
 
-        # Calculate Q-values
-        Q_values = np.zeros_like(self.reward_memory, dtype=np.float64)
-        Q_value = 0
-        for t in reversed(range(len(self.reward_memory))):
-            Q_value = self.reward_memory[t] + self.discount_rate*Q_value
-            Q_values[t] = Q_value
+        # Calculate R-values from terminal state and back to start
+        R = np.zeros_like(self.reward_memory, dtype=np.float64)
+        R_value = 0
+        memory_length = len(self.reward_memory)
+        for t in reversed(range(memory_length)):
+            R_value = self.reward_memory[t] + self.discount_rate*R_value
+            R[t] = R_value
 
         # Normalize
-        mean = np.mean(Q_values)
-        std = np.std(Q_values) if np.std(Q_values) > 0 else 1
-        Q_values = (Q_values - mean) / std
+        mean = np.mean(R)
+        std = np.std(R) if np.std(R) > 0 else 1
+        R = (R - mean) / std
 
         # Convert to tensor
-        Q_values = T.tensor(Q_values, dtype=T.float)
+        R = T.tensor(R, dtype=T.float)
         self.value_memory = T.tensor(self.value_memory, dtype=T.float)
 
+        # Calculate loss
         actor_loss = 0
         critic_loss = 0
-        
-        # Calculate loss
-        for q, logprob, value in zip(Q_values, self.action_memory, self.value_memory):
-            advantage = q - value
+        for r, logprob, value in zip(R, self.action_memory, self.value_memory):
+            advantage = r - value
             actor_loss += -advantage * logprob
-            critic_loss += F.smooth_l1_loss(value, q)
+            critic_loss += F.smooth_l1_loss(value, r)
                 
         # Update actor parameters
         self.actor_network.optimizer.zero_grad()
