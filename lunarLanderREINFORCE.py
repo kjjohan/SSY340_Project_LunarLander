@@ -1,6 +1,6 @@
 import numpy as np
 import gym
-from modelVanilla import PolicyGradientAgent
+from modelREINFORCE import PolicyGradientAgent
 import matplotlib.pyplot as plt 
 from gym import wrappers
 import time
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     score_history = []
     score = 0
     num_episodes = 3001
-    env = wrappers.Monitor(env, "gifsVanilla002", video_callable=lambda count: count % 500 == 0, force=True)
+    env = wrappers.Monitor(env, "gifsREINFORCE002", video_callable=lambda count: count % 500 == 0, force=True)
 
     start_time = time.time()
     for i in range(num_episodes):
